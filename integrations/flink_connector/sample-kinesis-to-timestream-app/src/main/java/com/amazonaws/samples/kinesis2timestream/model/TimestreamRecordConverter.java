@@ -91,20 +91,32 @@ public class TimestreamRecordConverter {
         return records;
     }
 
-    public static Record convertRecords2(final SampleDp sampleDp) {
+    public static Record convertRecords2MultiRecord(final SampleDp sampleDp) {
         List<Dimension> dimensions = List.of(
                 Dimension.builder()
-                        .name("vin_next")
+                        .name("vin_next1")
                         .value(sampleDp.getDimensionValue()).build());
+
+        List<MeasureValue> measureValues = new ArrayList<>();
+
+        for (int i = 0; i < sampleDp.getMeasureName().size(); i++) {
+            String measureName = sampleDp.getMeasureName().get(i);
+            String measureValue = sampleDp.getMeasureValue().get(i);
+            MeasureValue measureValueObj = MeasureValue.builder()
+                    .name(measureName)
+                    .type(MeasureValueType.VARCHAR)
+                    .value((measureValue)).build();
+            measureValues.add(measureValueObj);
+        }
 
 
         return Record.builder()
                 .dimensions(dimensions)
-                .measureName(sampleDp.getMeasureName())
-                .measureValue(sampleDp.getMeasureValue())
-                .measureValueType(MeasureValueType.VARCHAR)
+                .measureName("speed")
+                .measureValueType("MULTI")
+                .measureValues(measureValues)
                 .timeUnit(TimeUnit.MILLISECONDS)
-                .time(Long.toString(System.currentTimeMillis() + rand.nextInt(200))).build();
+                .time(Long.toString(System.currentTimeMillis())).build();
 
     }
 

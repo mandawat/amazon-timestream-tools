@@ -89,7 +89,7 @@ public class StreamingJobV2 {
 
         String region = parameter.get("Region", "us-east-1");
         String databaseName = parameter.get("TimestreamDbName", "kdaflink");
-        String tableName = parameter.get("TimestreamTableName", "kinesisdata");
+        String tableName = parameter.get("TimestreamTableName", "kinesisdata3");
         long memoryStoreTTLHours = Long.parseLong(parameter.get("MemoryStoreTTLHours", "24"));
         long magneticStoreTTLDays = Long.parseLong(parameter.get("MagneticStoreTTLDays", "7"));
 
@@ -104,7 +104,7 @@ public class StreamingJobV2 {
         timestreamInitializer.createTable(databaseName, tableName, memoryStoreTTLHours, magneticStoreTTLDays);
 
         TimestreamSink<SampleDp> sink = new TimestreamSink<>(
-                (recordObject, context) -> TimestreamRecordConverter.convertRecords2(recordObject),
+                (recordObject, context) -> TimestreamRecordConverter.convertRecords2MultiRecord(recordObject),
                 (List<Record> records) -> {
                     LOG.debug("Preparing WriteRecordsRequest with {} records", records.size());
                     return WriteRecordsRequest.builder()
@@ -138,17 +138,23 @@ public class StreamingJobV2 {
         mappedInput.flatMap(new FlatMapFunction<SampleModel, SampleDp>() {
             @Override
             public void flatMap(SampleModel sampleModel, Collector<SampleDp> collector) throws Exception {
-                SampleDp sampleDp = SampleDp.builder().measureName("speed")
-                        .measureValue(sampleModel.getSpeed())
+                List<String> list = new ArrayList<>();
+                list.add("value_in_double");
+
+                List<String> measureList = new ArrayList<>();
+                measureList.add(sampleModel.getSpeed());
+
+                SampleDp sampleDp = SampleDp.builder().measureName(list)
+                        .measureValue(measureList)
                         .dimensionName("vin")
                         .dimensionValue(sampleModel.getVin()).build();
                 collector.collect(sampleDp);
 
-                SampleDp sampleDp2 = SampleDp.builder().measureName("odometer")
-                        .measureValue(sampleModel.getOdometer())
-                        .dimensionName("vin")
-                        .dimensionValue(sampleModel.getVin()).build();
-                collector.collect(sampleDp2);
+//                SampleDp sampleDp2 = SampleDp.builder().measureName("odometer")
+//                        .measureValue(sampleModel.getOdometer())
+//                        .dimensionName("vin")
+//                        .dimensionValue(sampleModel.getVin()).build();
+//                collector.collect(sampleDp2);
             }
         }).sinkTo(sink)
         .disableChaining();

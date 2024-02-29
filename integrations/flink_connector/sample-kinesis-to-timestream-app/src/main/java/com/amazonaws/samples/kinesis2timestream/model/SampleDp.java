@@ -9,6 +9,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.List;
+
 @Data
 @Builder
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
@@ -19,10 +21,10 @@ import lombok.ToString;
 public class SampleDp {
 
         @JsonProperty(value = "measure_name", required = true)
-        private String measureName;
+        private List<String> measureName;
 
         @JsonProperty(value = "measureValue", required = true)
-        private String measureValue;
+        private List<String> measureValue;
 
         @JsonProperty(value = "dimensionName", required = true)
         private String dimensionName;
