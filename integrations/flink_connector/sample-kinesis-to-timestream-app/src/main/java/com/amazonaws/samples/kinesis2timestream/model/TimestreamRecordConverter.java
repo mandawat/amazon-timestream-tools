@@ -1,6 +1,8 @@
 package com.amazonaws.samples.kinesis2timestream.model;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import software.amazon.awssdk.services.timestreamwrite.model.Dimension;
 import software.amazon.awssdk.services.timestreamwrite.model.MeasureValue;
@@ -9,6 +11,8 @@ import software.amazon.awssdk.services.timestreamwrite.model.Record;
 import software.amazon.awssdk.services.timestreamwrite.model.TimeUnit;
 
 public class TimestreamRecordConverter {
+
+    static Random rand = new Random();
     public static Record convert(final MyHostBase customObject) {
         if (customObject.getClass().equals(MyHostMetric.class)) {
             return convertFromMetric((MyHostMetric) customObject);
@@ -18,6 +22,92 @@ public class TimestreamRecordConverter {
             throw new RuntimeException("Invalid object type: " + customObject.getClass().getSimpleName());
         }
     }
+
+    public static Record convertMultiRecords(final SampleModel sampleModel) {
+        List<Dimension> dimensions = List.of(
+                Dimension.builder()
+                        .name("vin")
+                        .value(sampleModel.getVin()).build());
+
+        List<MeasureValue> measureValues = List.of(
+                MeasureValue.builder()
+                        .name("odometer")
+                        .type(MeasureValueType.BIGINT)
+                        .value(sampleModel.getOdometer()).build(),
+                MeasureValue.builder()
+                        .name("speed")
+                        .type(MeasureValueType.VARCHAR)
+                        .value(sampleModel.getSpeed()).build(),
+                MeasureValue.builder()
+                        .name("battery_state_of_health")
+                        .type(MeasureValueType.DOUBLE)
+                        .value(doubleToString(sampleModel.getBattery_state_of_health())).build(),
+                MeasureValue.builder()
+                        .name("temperature")
+                        .type(MeasureValueType.BIGINT)
+                        .value(Integer.toString(sampleModel.getTemperature())).build()
+        );
+
+        return Record.builder()
+                .dimensions(dimensions)
+                .measureName("events_record")
+                .measureValueType("MULTI")
+                .measureValues(measureValues)
+                .timeUnit(TimeUnit.MILLISECONDS)
+                .time(Long.toString(sampleModel.getTimestamp())).build();
+    }
+
+    public static List<Record> convertRecords(final SampleModel sampleModel) {
+        List<Dimension> dimensions = List.of(
+                Dimension.builder()
+                        .name("vin")
+                        .value(sampleModel.getVin()).build());
+
+        List<Record> records = new ArrayList<>();
+            records.add(Record.builder()
+                    .dimensions(dimensions)
+                    .measureName("speed")
+                    .measureValue(sampleModel.getSpeed())
+                    .measureValueType(MeasureValueType.VARCHAR)
+                    .timeUnit(TimeUnit.MILLISECONDS)
+                    .time(Long.toString(sampleModel.getTimestamp())).build());
+
+        records.add(Record.builder()
+                .dimensions(dimensions)
+                .measureName("battery_state_of_health")
+                .measureValue(doubleToString(sampleModel.getBattery_state_of_health()))
+                .measureValueType(MeasureValueType.DOUBLE)
+                .timeUnit(TimeUnit.MILLISECONDS)
+                .time(Long.toString(sampleModel.getTimestamp())).build());
+
+
+        records.add(Record.builder()
+                .dimensions(dimensions)
+                .measureName("odometer")
+                .measureValue(sampleModel.getOdometer())
+                .measureValueType(MeasureValueType.VARCHAR)
+                .timeUnit(TimeUnit.MILLISECONDS)
+                .time(Long.toString(sampleModel.getTimestamp())).build());
+        return records;
+    }
+
+    public static Record convertRecords2(final SampleDp sampleDp) {
+        List<Dimension> dimensions = List.of(
+                Dimension.builder()
+                        .name("vin_next")
+                        .value(sampleDp.getDimensionValue()).build());
+
+
+        return Record.builder()
+                .dimensions(dimensions)
+                .measureName(sampleDp.getMeasureName())
+                .measureValue(sampleDp.getMeasureValue())
+                .measureValueType(MeasureValueType.VARCHAR)
+                .timeUnit(TimeUnit.MILLISECONDS)
+                .time(Long.toString(System.currentTimeMillis() + rand.nextInt(200))).build();
+
+    }
+
 
     private static Record convertFromEvent(final MyHostEvent event) {
         List<Dimension> dimensions = List.of(
